@@ -28,7 +28,7 @@ void init_fin(final *l){
 	l->last=NULL;
 	return;
 }
-void reverse(char str[], int len){
+void reverse(char str[], int len){ //reverses the string str[]
 	int i=0;
 	char ch;
 	while(i<len/2){
