@@ -38,7 +38,7 @@ void reverse(char str[], int len){
 		i++;
 	}
 }
-char *sitoa(int a, char* buffer){
+char *sitoa(int a, char* buffer){ //converts integer to string, same as itoa but since itoa is not present in stdlib.h
 	int i=0, rem;
 	if(a==0){
 		buffer[0]='0';
