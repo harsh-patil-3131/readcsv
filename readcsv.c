@@ -6,7 +6,6 @@ typedef struct date{
 	int month;
 	int year;
 }date;
-
 typedef struct node{
 	int amount;
 	int trans_ID;
@@ -14,21 +13,19 @@ typedef struct node{
 	char comment[20];
 	struct node *next;
 }node;
-
 typedef struct final{
 	int t_id;
 	node *start;
 	node *last;
 }final;
 // amount,17/10/2024,comment
-
 void init_fin(final *l){
 	l->t_id=00;
 	l->start=NULL;
 	l->last=NULL;
 	return;
 }
-void reverse(char str[], int len){ //reverses the string str[]
+void reverse(char str[], int len){
 	int i=0;
 	char ch;
 	while(i<len/2){
@@ -38,7 +35,7 @@ void reverse(char str[], int len){ //reverses the string str[]
 		i++;
 	}
 }
-char *sitoa(int a, char* buffer){ //converts integer to string, same as itoa but since itoa is not present in stdlib.h
+char *sitoa(int a, char* buffer){
 	int i=0, rem;
 	if(a==0){
 		buffer[0]='0';
@@ -54,48 +51,91 @@ char *sitoa(int a, char* buffer){ //converts integer to string, same as itoa but
 	reverse(buffer, i);
 	return buffer;
 }
+void add_in_node(node *nn, int amt, int t_id, char* dt, char *cmt){
+	char xyz[20];
+	strcpy(xyz, dt);
+	nn->amount=amt;
+	nn->trans_ID=t_id;
+	nn->d.d=atoi(strtok(xyz, "/"));
+	nn->d.month=atoi(strtok(NULL, "/"));
+	nn->d.year=atoi(strtok(NULL, "\0"));
+	strcpy(nn->comment, cmt);
+}
+int cmp(date d, char dt[]){
+	char xyz[20];
+	strcpy(xyz, dt);
+	if(((10000*(d.year))+(100*(d.month))+d.d) < atoi(strtok(xyz, "/"))+(100*atoi(strtok(NULL, "/")))+(10000*atoi(strtok(NULL,"\0")))){
+		return 1;
+	}
+	return 0;
+}
+void dup_addTransaction(final *l, int amt, char dt[], char *cmt){
+	//printf("amt:%d dt:%s cmt:%s\n", amt, dt, cmt);
+	node *nn=malloc(sizeof(node));
+	if(nn==NULL){
+		printf("nn==NULL\n");
+		return;
+	}
+	if(l->start==NULL){
+		l->start=nn;
+		l->last=nn;
+		nn->next=NULL;
+		l->t_id++;
+		add_in_node(nn, amt, l->t_id, dt, cmt);
+	}
+	else{
+		node *p=l->start, *q;
+		if(cmp(p->d, dt)==0){
+			nn->next=l->start;
+			l->start=nn;
+			l->t_id++;
+			add_in_node(nn, amt, l->t_id, dt, cmt);
+			return;
+		}
+		while(p && cmp(p->d, dt)){
+			q=p;
+			p=p->next;
+		}
+		if(p==NULL){
+			l->last->next=nn;
+			l->last=nn;
+			nn->next=NULL;
+			l->t_id++;
+			add_in_node(nn, amt, l->t_id, dt, cmt);
+			return;
+		}
+		q->next=nn;
+		nn->next=p;
+		l->t_id++;
+		add_in_node(nn, amt, l->t_id, dt, cmt);
+	}
+}
 void import_data(final *l, char *file){ //reads file given into data
-	char line[50], ch;
-	int i;
+	char line[50], ch, b[12], c[20];
+	int i, a;
 	FILE *fp;
 	fp=fopen(file, "r");
 	ch=fgetc(fp);
 	while(ch!=EOF && !feof(fp)){
 		i=0;
-		node *nn=malloc(sizeof(node));
-		if(l->start==NULL){
-			l->start=nn;
-			l->last=nn;
-			nn->next=NULL;
-		}
-		else{
-			l->last->next=nn;
-			l->last=nn;
-			nn->next=NULL;
-		}
 		while(ch!='\n' && ch!=EOF){
-			line[i]=ch;\
+			line[i]=ch;
 			i++;
 			ch=fgetc(fp);
 		}
 		line[i]='\0';
-		printf("line: %s\n", line);
-		nn->amount=atoi(strtok(line, ","));
-		l->t_id++;
-		nn->trans_ID=l->t_id;
-		nn->d.d=atoi(strtok(NULL, "/"));
-		nn->d.month=atoi(strtok(NULL, "/"));
-		nn->d.year=atoi(strtok(NULL, ","));
-		strcpy(nn->comment,strtok(NULL, "\0"));
+		//printf("line: %s\n", line);
+		a=atoi(strtok(line, ","));
+		strcpy(b, strtok(NULL, ","));
+		strcpy(c, strtok(NULL, "\0"));
+		dup_addTransaction(l, a, b, c);
 		ch=fgetc(fp);
 	}
 	fclose(fp);
 }
-//In linked list, amount,d.d/d.month/d,year,comment
-//
 void export_data(final *l, char *file){
 	FILE *fp;
-	char ch, buffer[20];
+	char buffer[20];
 	node *p=l->start;
 	fp=fopen(file, "w");
 	while(p){
@@ -113,37 +153,17 @@ void export_data(final *l, char *file){
 	}
 	fclose(fp);
 }
-
-void addTransaction(final *l, int amt, char dt[], char *cmt){
-	node *nn=(node *)malloc(sizeof(node));
-	char xyz[20];
-	strcpy(xyz, dt);
-	if(l->last==NULL){
-		l->start=l->last=nn;
-		nn->next=NULL;
-	}
-	else{
-		l->last->next=nn;
-		l->last=nn;
-		nn->next=NULL;
-	}
-	nn->amount=amt;
-	l->t_id++;
-	nn->trans_ID=l->t_id;
-	nn->d.d=atoi(strtok(xyz, "/"));
-	nn->d.month=atoi(strtok(NULL, "/"));
-	nn->d.year=atoi(strtok(NULL, "\0"));
-	strcpy(nn->comment, cmt);
-}
 int main(int argc, char *argv[]){
 	final l;
 	node *p;
 	init_fin(&l);
-	addTransaction(&l, 3131, "19/02/1640", "Raje1");
-	addTransaction(&l, 4141, "12/05/1822", "Raje2");
-	addTransaction(&l, 5151, "31/11/1955", "Raje3");
-	addTransaction(&l, 6161, "3/1/2010", "Raje4");
+	dup_addTransaction(&l, 22, "12/11/1930", "Raje0");
+	dup_addTransaction(&l, 3131, "19/02/1640", "Raje1");
+	dup_addTransaction(&l, 4141, "12/05/1522", "Raje2");
+	dup_addTransaction(&l, 5151, "31/11/1955", "Raje3");
+	dup_addTransaction(&l, 6161, "3/1/2010", "Raje4");
 	import_data(&l, argv[1]);
+	printf("after import_data\n");
 	p=l.start;
 	while(p){
 		printf("%d,%d,%d/%d/%d,%s\n", p->amount, p->trans_ID, p->d.d, p->d.month, p->d.year, p->comment);
